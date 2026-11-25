@@ -112,11 +112,16 @@ La proporción de `P_24h` sube de 54 % a 61 % hacia marzo (deriva temporal), y p
 
 | Modelo | Ventaja esperada | Limitación | Hiperparámetros probados |
 |---|---|---|---|
-| Baseline (Dummy) | | | |
-| Regresión logística | | | |
-| Random Forest | | | |
-| KNN | | | |
-| SVM | | | |
+| Baseline (Dummy) | Fija el piso sin usar ninguna variable: un modelo que no lo supere claramente no está aprovechando los datos. Casi no cuesta entrenarlo. | No distingue entre solicitudes. Aun así su F1 no es bajo: prediciendo siempre 1, F1 = 2p/(1+p) ≈ 0.70 a 0.75 según la proporción p de cada validación (sección 6). | |
+| Regresión logística | Aprende un peso por columna one-hot, así que aprovecha directamente la asociación de `agency` y `complaint_type` con el target. La regularización (`C`) frena los pesos de categorías poco frecuentes. Rápida e interpretable. | Los efectos solo se suman: no capta interacciones (p. ej. un mismo `complaint_type` con distinto comportamiento según `borough` u `hour`). `hour` tiene un solo coeficiente: su efecto solo puede subir o bajar de 0 a 23, sin picos intermedios. | |
+| Random Forest | Puede capturar interacciones (p. ej. `complaint_type` × `borough` × `hour`) sin definirlas a mano y usar `hour` de forma no lineal con varios cortes. | Con one-hot cada división separa una sola categoría, así que aprovechar muchos de los 152 `complaint_type` exige árboles profundos; si se sortean pocas columnas por división, las informativas entran pocas veces. Puede sobreajustar categorías raras; es más costoso y menos interpretable. | |
+| KNN | No supone una forma para la relación: predice con las solicitudes pasadas más parecidas, por lo que puede reflejar combinaciones locales (misma queja, mismo `borough`, hora cercana). | Cambiar de categoría suma la misma distancia en cualquier variable (`weekday` pesa igual que `complaint_type`); una diferencia grande en `hour` estandarizada puede pesar más, y las 23 h quedan lejos de las 0 h. Predecir es lento: compara con todas las filas de entrenamiento. | |
+| SVM | Un margen lineal regularizado suele funcionar bien con muchas columnas one-hot, y `LinearSVC` escala a ~73 000 filas. | Igual que la regresión logística, no capta interacciones y trata `hour` linealmente, así que se esperan resultados parecidos. No tiene `predict_proba`: su `decision_function` sirve para ROC AUC, pero no es una probabilidad. | |
+
+Son expectativas previas, a contrastar con las secciones 9 y 10.
+
+- **¿Por qué SVM lineal y no con kernel?** El tiempo de entrenamiento de `SVC` con kernel crece al menos con el cuadrado del número de filas: con ~73 000 filas y varias configuraciones por corte no es práctico, y usar una submuestra lo compararía con menos datos que a los demás. A cambio se renuncia a fronteras no lineales.
+- **Limitación común:** ningún modelo corrige por sí solo la deriva temporal (sección 6), porque todos aprenden del pasado. Una categoría no vista en el entrenamiento queda en ceros en el one-hot (`handle_unknown="ignore"`).
 
 ## 9. Resultados por corte
 <!-- Jose Carlos Isai Huitron Barron -->
