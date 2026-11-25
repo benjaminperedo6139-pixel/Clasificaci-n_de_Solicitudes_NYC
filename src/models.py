@@ -39,8 +39,11 @@ def make_pipeline(estimator) -> Pipeline:
 
 def get_models() -> dict[str, tuple[Pipeline, dict]]:
     """Devuelve los modelos a comparar y sus rejillas de hiperparámetros."""
-    # Cada entrada: nombre -> (pipeline, rejilla). Una rejilla vacía {} usa los valores por defecto.
+    # Cada entrada: nombre -> (pipeline, rejilla). GridSearchCV prueba todas las combinaciones
+    # de la rejilla; lo que no aparece en ella queda fijo en el pipeline.
     models = {
+        # Referencia sin aprendizaje. strategy: "most_frequent" predice siempre la clase más común;
+        # "stratified" predice al azar respetando la proporción de clases
         "baseline": (
             make_pipeline(DummyClassifier(random_state=SEED)),
             {"model__strategy": ["most_frequent", "stratified"]},
