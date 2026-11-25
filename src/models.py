@@ -20,6 +20,7 @@ Para el README, documentar por modelo: ventaja esperada, limitación y rejilla p
 
 from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression
 
 from src.config import SEED
 from src.preprocessor import build_preprocessor
@@ -35,13 +36,17 @@ def make_pipeline(estimator) -> Pipeline:
 
 def get_models() -> dict[str, tuple[Pipeline, dict]]:
     """Devuelve los modelos a comparar y sus rejillas de hiperparámetros."""
-    # Ejemplo del formato esperado; Integrante B completa el resto.
+    # Cada entrada: nombre -> (pipeline, rejilla). Una rejilla vacía {} usa los valores por defecto.
     models = {
         "baseline": (
             make_pipeline(DummyClassifier(random_state=SEED)),
             {"model__strategy": ["most_frequent", "stratified"]},
         ),
-        # "logistic_regression": (make_pipeline(LogisticRegression(...)), {...}),
+        # Modelo lineal; max_iter=1000 (por defecto 100) para que el solver alcance a converger
+        "logistic_regression": (
+            make_pipeline(LogisticRegression(max_iter=1000, random_state=SEED)),
+            {},
+        ),
         # "random_forest":       (make_pipeline(RandomForestClassifier(...)), {...}),
         # "knn":                 (make_pipeline(KNeighborsClassifier(...)), {...}),
         # "svm":                 (make_pipeline(LinearSVC(...)), {...}),
