@@ -81,7 +81,7 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
         ),
         # SVM lineal: SVC con kernel es inviable con ~73 000 filas
         # C: penalización por errores (C pequeño = más regularización). Va una década por debajo
-        # de la rejilla logística porque los C grandes cuestan más y regularizan muy poco
+        # de la rejilla logística porque su pérdida (bisagra al cuadrado) castiga más los errores
         # El max_iter por defecto (1000) es suficiente: con más filas que columnas converge rápido
         "svm": (
             make_pipeline(LinearSVC(random_state=SEED)),
