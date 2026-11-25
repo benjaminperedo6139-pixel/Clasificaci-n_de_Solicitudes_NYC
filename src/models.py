@@ -22,6 +22,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 from src.config import SEED
 from src.preprocessor import build_preprocessor
@@ -53,7 +54,11 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             make_pipeline(RandomForestClassifier(random_state=SEED)),
             {},
         ),
-        # "knn":                 (make_pipeline(KNeighborsClassifier(...)), {...}),
+        # Clasifica según los vecinos más cercanos; no usa azar, por eso no lleva semilla
+        "knn": (
+            make_pipeline(KNeighborsClassifier()),
+            {},
+        ),
         # "svm":                 (make_pipeline(LinearSVC(...)), {...}),
     }
     return models
