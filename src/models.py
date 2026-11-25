@@ -69,9 +69,15 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             },
         ),
         # Clasifica según los vecinos más cercanos; no usa azar, por eso no lleva semilla
+        # n_neighbors: cuántos vecinos votan (pocos = sensible al ruido, muchos = más suave);
+        # impares para evitar empates con voto uniforme
+        # weights: "uniform" todos valen igual; "distance" los más cercanos pesan más
         "knn": (
             make_pipeline(KNeighborsClassifier()),
-            {},
+            {
+                "model__n_neighbors": [5, 15, 51, 101],
+                "model__weights": ["uniform", "distance"],
+            },
         ),
         # SVM lineal: SVC con kernel es inviable con ~73 000 filas
         # max_iter=5000 (por defecto 1000) da margen para converger
