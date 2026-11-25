@@ -14,8 +14,9 @@ Contrato (no cambiar la firma sin avisar al equipo):
 - results: pd.DataFrame, una fila por (modelo, configuración, corte) con columnas:
         model | params | fold | accuracy | precision | recall | f1 | roc_auc
 - La selección se hace con PRIMARY_METRIC (F1) promediado sobre los cortes.
-- evaluate_on_test: reentrena con todo el periodo de desarrollo, evalúa UNA vez en el
-  bloque reservado y devuelve métricas + matriz de confusión.
+- evaluate_on_test: reentrena con X_final/y_final (desarrollo cuya etiqueta ya se conocía al
+  inicio de la prueba, ver get_final_train_idx), evalúa UNA vez en el bloque reservado y
+  devuelve métricas + matriz de confusión.
 
 Archivos de salida (contrato con Streamlit, rutas en config.py):
     METRICS_BY_FOLD_FILE, FOLDS_FILE, TEST_METRICS_FILE, CONFUSION_MATRIX_FILE, BEST_MODEL_FILE
