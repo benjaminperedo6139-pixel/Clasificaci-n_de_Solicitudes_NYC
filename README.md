@@ -123,6 +123,15 @@ Son expectativas previas, a contrastar con las secciones 9 y 10.
 - **¿Por qué SVM lineal y no con kernel?** El tiempo de entrenamiento de `SVC` con kernel crece al menos con el cuadrado del número de filas: con ~73 000 filas y varias configuraciones por corte no es práctico, y usar una submuestra lo compararía con menos datos que a los demás. A cambio se renuncia a fronteras no lineales.
 - **Limitación común:** ningún modelo corrige por sí solo la deriva temporal (sección 6), porque todos aprenden del pasado. Una categoría no vista en el entrenamiento queda en ceros en el one-hot (`handle_unknown="ignore"`).
 
+**Preprocesamiento** ([src/preprocessor.py](src/preprocessor.py)), común a los cinco modelos:
+
+| Columnas | Pasos |
+|---|---|
+| `hour` (numérica) | Imputación con la mediana → estandarización (`StandardScaler`). |
+| Las 6 categóricas (incluida `weekday`) | Nulos unificados como `NaN` → imputación con `"sin_dato"` → one-hot (`handle_unknown="ignore"`, salida densa). |
+
+Va como primer paso del `Pipeline` de cada modelo: al ajustar el `Pipeline` solo con el entrenamiento de un corte, la mediana, el escalado y las categorías se aprenden sin ver la validación.
+
 **Búsqueda y selección.** Las rejillas ([src/models.py](src/models.py)) suman **24 combinaciones**; con 3 cortes son **72 ajustes** (24 × 3). Lo que no figura en la tabla queda en el valor por defecto de scikit-learn. Se elegirá el modelo y la configuración con mayor **F1 promedio en los 3 cortes**, sin usar el bloque de prueba.
 
 **Estado:** las rejillas todavía **no se han evaluado con datos reales** y no hay resultados: la API no era accesible desde el equipo usado y [src/evaluation.py](src/evaluation.py) aún no está implementado. Solo se comprobó con datos **sintéticos** (90 000 filas, 271 columnas) que los 72 ajustes corren sin errores ni avisos, en unos 9 minutos en secuencial.
