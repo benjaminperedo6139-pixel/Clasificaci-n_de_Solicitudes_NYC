@@ -4,7 +4,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from src.config import CAT_FEATURES, NUM_FEATURES, TARGET
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
 def build_preprocessor() -> ColumnTransformer:
@@ -23,7 +23,8 @@ def build_preprocessor() -> ColumnTransformer:
     scaler = StandardScaler()
 
     # Imputador
-    imputer_num = KNNImputer(n_neighbors=5)
+    # hour es la única numérica: no hay otras columnas para buscar vecinos, basta la mediana
+    imputer_num = SimpleImputer(strategy="median")
     imputer_cat = SimpleImputer(strategy="constant", fill_value="sin_dato")
 
     preprocessor = ColumnTransformer(
