@@ -23,7 +23,9 @@ def build_preprocessor() -> ColumnTransformer:
 
     """
 
-    # Codificador
+    # Codificador: las categorías no vistas en entrenamiento quedan en ceros.
+    # Salida densa: con ~270 columnas ocupa ~160 MB y Random Forest y KNN
+    # resultan bastante más rápidos que con matriz dispersa.
     encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
 
     # Escalador
