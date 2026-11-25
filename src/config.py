@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # API
 API = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
-COLUMNS = ["unique_key", "created_date", "closed_date", "complaint_type",
+COLUMNS = ["unique_key", "created_date", "closed_date", "agency", "complaint_type",
            "borough", "open_data_channel_type", "location_type"]
 START_DATE = "2025-01-01T00:00:00"
 END_DATE = "2025-04-01T00:00:00"   # exclusivo -> enero a marzo 2025
@@ -24,15 +24,19 @@ CACHE = ROOT / "data" / "nyc311_ene_mar2025.json"
 
 # VARIABLES (solo información disponible al registrar la solicitud)
 DATE_COL = "created_date"
-CAT_FEATURES = ["complaint_type", "borough", "open_data_channel_type", "location_type", "weekday"]
+CAT_FEATURES = ["agency", "complaint_type", "borough", "open_data_channel_type", "location_type", "weekday"]
 NUM_FEATURES = ["hour"]
 TARGET = "P_24h"
+
+# TARGET
+HORIZON_HOURS = 24          # P_24h = 1 si la solicitud se cierra en menos de 24 h
+MIN_DURATION_SECONDS = 150  # cierres en <= 150 s (o negativos) se consideran automáticos/errores
 
 # VALIDACIÓN TEMPORAL (ventana expansiva)
 TEST_DAYS = 14        # último bloque de días reservado para la prueba final
 N_FOLDS = 3           # número de cortes entrenamiento/validación
 VAL_DAYS = 14         # días de cada bloque de validación
-GAP_HOURS = 24        # la etiqueta P_24h solo se conoce 24h después de crear la solicitud
+GAP_HOURS = HORIZON_HOURS  # la etiqueta P_24h solo se conoce 24h después de crear la solicitud
 
 # MÉTRICA PRINCIPAL (definida antes de comparar modelos)
 PRIMARY_METRIC = "f1"
