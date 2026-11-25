@@ -48,10 +48,14 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             make_pipeline(DummyClassifier(random_state=SEED)),
             {"model__strategy": ["most_frequent", "stratified"]},
         ),
-        # Modelo lineal; max_iter=1000 (por defecto 100) para que el solver alcance a converger
+        # Modelo lineal. C: inverso de la regularización (C pequeño = modelo más simple), en escala
+        # logarítmica alrededor del valor por defecto (1). max_iter=1000 (por defecto 100) es solo
+        # un tope de margen: el solver se detiene antes si ya convergió
+        # No se prueba class_weight="balanced": las clases están casi equilibradas (~57/43) y resta
+        # peso a la clase positiva (la mayoritaria), lo que no suele favorecer a su F1
         "logistic_regression": (
             make_pipeline(LogisticRegression(max_iter=1000, random_state=SEED)),
-            {},
+            {"model__C": [0.01, 0.1, 1, 10]},
         ),
         # Muchos árboles de decisión que votan; la semilla hace repetible el azar
         "random_forest": (
