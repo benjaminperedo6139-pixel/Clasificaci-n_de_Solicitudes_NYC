@@ -21,6 +21,7 @@ Para el README, documentar por modelo: ventaja esperada, limitación y rejilla p
 from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 from src.config import SEED
 from src.preprocessor import build_preprocessor
@@ -47,7 +48,11 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             make_pipeline(LogisticRegression(max_iter=1000, random_state=SEED)),
             {},
         ),
-        # "random_forest":       (make_pipeline(RandomForestClassifier(...)), {...}),
+        # Muchos árboles de decisión que votan; la semilla hace repetible el azar
+        "random_forest": (
+            make_pipeline(RandomForestClassifier(random_state=SEED)),
+            {},
+        ),
         # "knn":                 (make_pipeline(KNeighborsClassifier(...)), {...}),
         # "svm":                 (make_pipeline(LinearSVC(...)), {...}),
     }
