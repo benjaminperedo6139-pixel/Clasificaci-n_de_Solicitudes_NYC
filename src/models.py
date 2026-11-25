@@ -23,6 +23,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import LinearSVC
 
 from src.config import SEED
 from src.preprocessor import build_preprocessor
@@ -59,6 +60,11 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             make_pipeline(KNeighborsClassifier()),
             {},
         ),
-        # "svm":                 (make_pipeline(LinearSVC(...)), {...}),
+        # SVM lineal: SVC con kernel es inviable con ~73 000 filas
+        # max_iter=5000 (por defecto 1000) da margen para converger
+        "svm": (
+            make_pipeline(LinearSVC(max_iter=5000, random_state=SEED)),
+            {},
+        ),
     }
     return models
