@@ -1,0 +1,49 @@
+"""
+Modelos y rejillas de hiperparámetros.              RESPONSABLE: Integrante B
+
+Contrato (no cambiar la firma sin avisar al equipo):
+
+    models = get_models()
+
+- Devuelve dict[str, tuple[Pipeline, dict]]:
+      {"nombre_modelo": (pipeline, param_grid), ...}
+- pipeline: sklearn Pipeline con pasos ("preprocessor", build_preprocessor()) y ("model", ...)
+- param_grid: dict para GridSearchCV, con claves prefijadas "model__<param>".
+  Ej: {"model__C": [0.1, 1, 10]}
+- Debe incluir obligatoriamente un modelo de referencia "baseline" (DummyClassifier).
+
+Modelos sugeridos: baseline (DummyClassifier), logistic_regression, random_forest,
+knn, svm (LinearSVC o SVC sobre submuestra). Todos son CLASIFICADORES.
+
+Para el README, documentar por modelo: ventaja esperada, limitación y rejilla probada.
+"""
+
+from sklearn.pipeline import Pipeline
+from sklearn.dummy import DummyClassifier
+
+from src.config import SEED
+from src.preprocessor import build_preprocessor
+
+
+def make_pipeline(estimator) -> Pipeline:
+    """Envuelve un estimador con el preprocesador común (se ajusta solo con train en cada corte)."""
+    return Pipeline([
+        ("preprocessor", build_preprocessor()),
+        ("model", estimator),
+    ])
+
+
+def get_models() -> dict[str, tuple[Pipeline, dict]]:
+    """Devuelve los modelos a comparar y sus rejillas de hiperparámetros."""
+    # Ejemplo del formato esperado; Integrante B completa el resto.
+    models = {
+        "baseline": (
+            make_pipeline(DummyClassifier(random_state=SEED)),
+            {"model__strategy": ["most_frequent", "stratified"]},
+        ),
+        # "logistic_regression": (make_pipeline(LogisticRegression(...)), {...}),
+        # "random_forest":       (make_pipeline(RandomForestClassifier(...)), {...}),
+        # "knn":                 (make_pipeline(KNeighborsClassifier(...)), {...}),
+        # "svm":                 (make_pipeline(LinearSVC(...)), {...}),
+    }
+    return models

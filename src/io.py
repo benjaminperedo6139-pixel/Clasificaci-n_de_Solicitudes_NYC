@@ -10,7 +10,7 @@ from urllib3.util.retry import Retry
 from datetime import datetime, timezone
 
 
-from src.config import SEED, CACHE, QUERY, API, COLUMNS
+from src.config import SEED, CACHE, QUERY, API, COLUMNS, PAGE_SIZE, MAX_ROWS
 from src.config import NUM_FEATURES, CAT_FEATURES, TARGET
 from src.target import make_target
 
@@ -43,15 +43,16 @@ class Dataset:
         if token:
             session.headers["X-App-Token"] = token
         rows = []
-        for offset in range(0, 100000, 5000):
-            response = session.get(API, params={**QUERY, "$limit": 5000,
+        for offset in range(0, MAX_ROWS, PAGE_SIZE):
+            response = session.get(API, params={**QUERY, "$limit": PAGE_SIZE,
                                                 "$offset": offset}, timeout=90)
             response.raise_for_status()
             page = response.json()
             if not isinstance(page, list):
                 raise ValueError("Respuesta inesperada de Socrata.")
             rows.extend(page)
-            if len(page) < 5000:
+            print(f"Descargadas {len(rows)} filas...")
+            if len(page) < PAGE_SIZE:
                 break
         else:
             raise ValueError("Se alcanzó el límite de seguridad; no se guarda una muestra truncada.")
@@ -59,7 +60,7 @@ class Dataset:
             raise ValueError("La API no devolvió filas. Revisa la consulta.")
         payload = {"api": API, "query": QUERY,
                 "downloaded_at": datetime.now(timezone.utc).isoformat(), "rows": rows}
-        CACHE.parent.mkdir(exist_ok=True)
+        CACHE.parent.mkdir(parents=True, exist_ok=True)
         temporary = CACHE.with_suffix(".tmp")
         temporary.write_text(json.dumps(payload, ensure_ascii=False))
         temporary.replace(CACHE)

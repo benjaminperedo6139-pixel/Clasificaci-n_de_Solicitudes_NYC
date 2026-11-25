@@ -1,40 +1,42 @@
 # PARA EL USUARIO
+# Ejecutar:  python train.py
 
 from src.io import Dataset
-from src.evaluation import ModelEvaluation
-
-# Modelos
-from src.preprocessor import build_preprocessor
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.neural_network import MLPRegressor
+from src.config import DATE_COL, NUM_FEATURES, CAT_FEATURES, TARGET
+from src.temporal_split import make_temporal_folds
+from src.models import get_models
+from src.evaluation import run_experiment, select_best, evaluate_on_test
 
 
 def train():
 
-    # Importacion y preprocesamiento datos
-    data = Dataset(seed=43, num_samples=None)
-    X, y = data.load_xy()
+    # 1. Datos + target P_24h (Integrante A)
+    data = Dataset()
+    df = data.load_df_target().sort_values(DATE_COL).reset_index(drop=True)
 
-    # Model pipeline (preprocessing + model, Linear Regression)
-    pipeline_lr = Pipeline(
-        [
-            ("preprocessor", build_preprocessor()),
-            ("model", LogisticRegression(max_iter=1000,
-                                         tol=0.0001,
-                                         solver='lbfgs'))
-        ]
-    )
+    # 2. Cortes temporales + bloque de prueba (Integrante A)
+    folds, test_idx, folds_info = make_temporal_folds(df)
+    print(folds_info)
 
-    # Entrenamiento y métricas
-    ev = ModelEvaluation(X=X, y=y)
-    ev.evaluate_model(model=pipeline_lr)
+    df_dev = df.drop(index=test_idx).reset_index(drop=True)
+    df_test = df.loc[test_idx].reset_index(drop=True)
+    features = NUM_FEATURES + CAT_FEATURES
+    X_dev, y_dev = df_dev[features], df_dev[TARGET]
+    X_test, y_test = df_test[features], df_test[TARGET]
 
-#    return
+    # 3. Modelos e hiperparámetros (Integrante B)
+    models = get_models()
+
+    # 4. Comparación por corte y selección (Integrante C)
+    results = run_experiment(X_dev, y_dev, folds, models)
+    best_name, best_params = select_best(results)
+    print(f"Mejor modelo: {best_name} {best_params}")
+
+    # 5. Evaluación final en el bloque reservado (Integrante C)
+    best_model = models[best_name][0].set_params(**best_params)
+    test_metrics = evaluate_on_test(best_model, X_dev, y_dev, X_test, y_test)
+    print(test_metrics)
+
 
 if __name__ == "__main__":
     train()

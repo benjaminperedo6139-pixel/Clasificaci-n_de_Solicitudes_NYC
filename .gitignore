@@ -1,0 +1,21 @@
+# Datos descargados (se obtienen con python train.py)
+data/
+src/data/
+*.tmp
+
+# Resultados generados por el experimento
+results/
+mlruns/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
