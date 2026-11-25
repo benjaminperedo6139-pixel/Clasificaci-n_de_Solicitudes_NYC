@@ -57,10 +57,16 @@ def get_models() -> dict[str, tuple[Pipeline, dict]]:
             make_pipeline(LogisticRegression(max_iter=1000, random_state=SEED)),
             {"model__C": [0.01, 0.1, 1, 10]},
         ),
-        # Muchos árboles de decisión que votan; la semilla hace repetible el azar
+        # Muchos árboles de decisión que votan; la semilla hace repetible el azar.
+        # n_jobs=-1 entrena los árboles en todos los núcleos; se usan los 100 árboles por defecto
+        # min_samples_leaf: mínimo de filas por hoja (más alto = árboles más pequeños, menos sobreajuste)
+        # max_features: columnas sorteadas en cada división; "sqrt" son ~16 de ~270 y 0.2 son ~54
         "random_forest": (
-            make_pipeline(RandomForestClassifier(random_state=SEED)),
-            {},
+            make_pipeline(RandomForestClassifier(n_jobs=-1, random_state=SEED)),
+            {
+                "model__min_samples_leaf": [1, 5, 20],
+                "model__max_features": ["sqrt", 0.2],
+            },
         ),
         # Clasifica según los vecinos más cercanos; no usa azar, por eso no lleva semilla
         "knn": (
