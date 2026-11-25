@@ -1,11 +1,18 @@
+import numpy as np
 import pandas as pd
 
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from src.config import CAT_FEATURES, NUM_FEATURES, TARGET
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
+from src.config import CAT_FEATURES, NUM_FEATURES
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
+
+def unificar_nulos(X: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convierte cualquier valor faltante (None, pd.NA) en np.nan,
+    que es el único que SimpleImputer reconoce por defecto.
+    """
+    return X.astype(object).where(X.notna(), np.nan)
 
 def build_preprocessor() -> ColumnTransformer:
     """
@@ -16,25 +23,27 @@ def build_preprocessor() -> ColumnTransformer:
 
     """
 
-    # Codificador
+    # Codificador: las categorías no vistas en entrenamiento quedan en ceros.
+    # Salida densa: con ~270 columnas ocupa ~160 MB y Random Forest y KNN
+    # resultan bastante más rápidos que con matriz dispersa.
     encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
 
     # Escalador
     scaler = StandardScaler()
 
     # Imputador
-    imputer_num = KNNImputer(n_neighbors=5)
+    # hour es la única numérica: no hay otras columnas para buscar vecinos, basta la mediana
+    imputer_num = SimpleImputer(strategy="median")
     imputer_cat = SimpleImputer(strategy="constant", fill_value="sin_dato")
+
+    # Unificador de nulos (feature_names_out conserva los nombres de columna)
+    nulos = FunctionTransformer(unificar_nulos, feature_names_out="one-to-one")
 
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", Pipeline([("imputer", imputer_num),("scaler", scaler)]), NUM_FEATURES),
-            ("cat", Pipeline([('imputer', imputer_cat),("encoder", encoder)]), CAT_FEATURES),
- #           ("target", "passthrough", TARGET)
+            ("cat", Pipeline([("nulos", nulos),('imputer', imputer_cat),("encoder", encoder)]), CAT_FEATURES),
         ]
     )
-
-    #print(preprocessor)
-
 
     return preprocessor

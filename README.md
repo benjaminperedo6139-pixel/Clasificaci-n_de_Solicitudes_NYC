@@ -110,13 +110,31 @@ La proporción de `P_24h` sube de 54 % a 61 % hacia marzo (deriva temporal), y p
 ## 8. Modelos e hiperparámetros
 <!-- Jorge Alberto Laureano Corona -->
 
-| Modelo | Ventaja esperada | Limitación | Hiperparámetros probados |
+| Modelo | Ventaja esperada | Limitación | Rejilla de hiperparámetros |
 |---|---|---|---|
-| Baseline (Dummy) | | | |
-| Regresión logística | | | |
-| Random Forest | | | |
-| KNN | | | |
-| SVM | | | |
+| Baseline (Dummy) | Fija el piso sin usar ninguna variable: un modelo que no lo supere claramente no está aprovechando los datos. Casi no cuesta entrenarlo. | No distingue entre solicitudes. Aun así su F1 no es bajo: prediciendo siempre 1, F1 = 2p/(1+p) ≈ 0.70 a 0.75 según la proporción p de cada validación (sección 6). | `strategy`: `most_frequent`, `stratified`<br>**2** combinaciones<br>Fijo: `random_state=42` |
+| Regresión logística | Aprende un peso por columna one-hot, así que aprovecha directamente la asociación de `agency` y `complaint_type` con el target. La regularización (`C`) frena los pesos de categorías poco frecuentes. Rápida e interpretable. | Los efectos solo se suman: no capta interacciones (p. ej. un mismo `complaint_type` con distinto comportamiento según `borough` u `hour`). `hour` tiene un solo coeficiente: su efecto solo puede subir o bajar de 0 a 23, sin picos intermedios. | `C`: 0.01, 0.1, 1, 10<br>**4** combinaciones<br>Fijos: `max_iter=1000`, `random_state=42` |
+| Random Forest | Puede capturar interacciones (p. ej. `complaint_type` × `borough` × `hour`) sin definirlas a mano y usar `hour` de forma no lineal con varios cortes. | Con one-hot cada división separa una sola categoría, así que aprovechar muchos de los 152 `complaint_type` exige árboles profundos; si se sortean pocas columnas por división, las informativas entran pocas veces. Puede sobreajustar categorías raras; es más costoso y menos interpretable. | `min_samples_leaf`: 1, 5, 20<br>`max_features`: `"sqrt"`, 0.2<br>**6** combinaciones<br>Fijos: `n_jobs=-1`, `random_state=42` |
+| KNN | No supone una forma para la relación: predice con las solicitudes pasadas más parecidas, por lo que puede reflejar combinaciones locales (misma queja, mismo `borough`, hora cercana). | Cambiar de categoría suma la misma distancia en cualquier variable (`weekday` pesa igual que `complaint_type`); una diferencia grande en `hour` estandarizada puede pesar más, y las 23 h quedan lejos de las 0 h. Predecir es lento: compara con todas las filas de entrenamiento. | `n_neighbors`: 5, 15, 51, 101<br>`weights`: `uniform`, `distance`<br>**8** combinaciones<br>Fijos: ninguno |
+| SVM | Un margen lineal regularizado suele funcionar bien con muchas columnas one-hot, y `LinearSVC` escala a ~73 000 filas. | Igual que la regresión logística, no capta interacciones y trata `hour` linealmente, así que se esperan resultados parecidos. No tiene `predict_proba`: su `decision_function` sirve para ROC AUC, pero no es una probabilidad. | `LinearSVC`<br>`C`: 0.001, 0.01, 0.1, 1<br>**4** combinaciones<br>Fijo: `random_state=42` |
+
+Son expectativas previas, a contrastar con las secciones 9 y 10.
+
+- **¿Por qué SVM lineal y no con kernel?** El tiempo de entrenamiento de `SVC` con kernel crece al menos con el cuadrado del número de filas: con ~73 000 filas y varias configuraciones por corte no es práctico, y usar una submuestra lo compararía con menos datos que a los demás. A cambio se renuncia a fronteras no lineales.
+- **Limitación común:** ningún modelo corrige por sí solo la deriva temporal (sección 6), porque todos aprenden del pasado. Una categoría no vista en el entrenamiento queda en ceros en el one-hot (`handle_unknown="ignore"`).
+
+**Preprocesamiento** ([src/preprocessor.py](src/preprocessor.py)), común a los cinco modelos:
+
+| Columnas | Pasos |
+|---|---|
+| `hour` (numérica) | Imputación con la mediana → estandarización (`StandardScaler`). |
+| Las 6 categóricas (incluida `weekday`) | Nulos unificados como `NaN` → imputación con `"sin_dato"` → one-hot (`handle_unknown="ignore"`, salida densa). |
+
+Va como primer paso del `Pipeline` de cada modelo: al ajustar el `Pipeline` solo con el entrenamiento de un corte, la mediana, el escalado y las categorías se aprenden sin ver la validación.
+
+**Búsqueda y selección.** Las rejillas ([src/models.py](src/models.py)) suman **24 combinaciones**; con 3 cortes son **72 ajustes** (24 × 3). Lo que no figura en la tabla queda en el valor por defecto de scikit-learn. Se elegirá el modelo y la configuración con mayor **F1 promedio en los 3 cortes**, sin usar el bloque de prueba.
+
+**Estado:** las rejillas todavía **no se han evaluado con datos reales** y no hay resultados: la API no era accesible desde el equipo usado y [src/evaluation.py](src/evaluation.py) aún no está implementado. Solo se comprobó con datos **sintéticos** (90 000 filas, 271 columnas) que los 72 ajustes corren sin errores ni avisos, en unos 9 minutos en secuencial.
 
 ## 9. Resultados por corte
 <!-- Jose Carlos Isai Huitron Barron -->
