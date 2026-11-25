@@ -78,9 +78,12 @@ class Dataset:
     
     def load_df_target(self):
 
-        df = self.load_df()
+        payload = self.load_data()
+        df = pd.DataFrame(payload["rows"]).reindex(columns=COLUMNS)
 
-        df_target = make_target(df)
+        # Las solicitudes abiertas solo tienen etiqueta conocida si pasaron 24 h
+        # antes de la fecha de descarga
+        df_target = make_target(df, as_of=payload["downloaded_at"])
 
         return df_target
     
