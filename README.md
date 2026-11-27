@@ -148,6 +148,31 @@ Va como primer paso del `Pipeline` de cada modelo: al ajustar el `Pipeline` solo
 ## 12. Interfaz gráfica
 <!-- Benjamin Peredo Alonso -->
 
+Implementada en [app.py](app.py) con Streamlit. Se ejecuta desde la raíz del repo **después** de `python train.py`:
+
+```bash
+streamlit run app.py
+```
+
+La app **no reentrena**: solo lee lo que deja `train.py` en `results/` (rutas en la sección *SALIDAS* de [src/config.py](src/config.py)). Si falta algún archivo, lo avisa y deja vacía la pestaña correspondiente.
+
+| Pestaña | Contenido | Archivo que lee |
+|---|---|---|
+| Validación temporal | Línea de tiempo de los 3 cortes y del bloque de prueba, con fechas, tamaños y % de `P_24h` | `folds.csv` |
+| Comparación de modelos | Mejor configuración de cada modelo por corte, comparación contra el baseline y todas las configuraciones probadas. Se puede cambiar la métrica | `metrics_by_fold.csv` |
+| Prueba final | Métricas en el bloque reservado, matriz de confusión e interpretación de FP y FN | `test_metrics.json`, `confusion_matrix.csv` |
+| Predecir solicitud | Formulario con las variables que se conocen al registrar una solicitud. Devuelve la predicción del modelo elegido (o el puntaje de decisión si el ganador es `LinearSVC`) | `best_model.joblib` |
+| Datos | % de `P_24h` por categoría y deriva diaria | caché `data/` |
+
+Decisiones:
+- **Las opciones del formulario salen del `OneHotEncoder` del pipeline entrenado**, así que solo se ofrecen categorías que el modelo vio. Si existe la caché de datos, `complaint_type` se filtra según la `agency` elegida.
+- **`hour` y `weekday` se calculan a partir de la fecha y hora de registro**, igual que en [src/target.py](src/target.py), para que la entrada tenga el mismo formato que en el entrenamiento.
+- **La app solo lee archivos y nunca vuelve a correr el experimento**, para evitar abrirla y tener que esperar los 72 ajustes.
+
+Formato que espera de los archivos de `evaluation.py`:
+- `confusion_matrix.csv`: matriz 2×2 con filas = real y columnas = predicho, en orden `0, 1`. Se aceptan etiquetas en la primera columna o en el encabezado.
+- `test_metrics.json`: `{"f1": 0.81, "accuracy": 0.80, ...}`, o bien esas métricas dentro de una clave `"metrics"`.
+
 ## 13. Contribuciones
 
 | Integrante | Rama | Contribución | Commits |
